@@ -36,5 +36,65 @@ namespace redot_api.Controllers
         public async Task<ActionResult<ServiceResponse<Comment>>> GetComment(int commentId){
             return Ok(await _commentService.GetComment(commentId));
         }
+
+        [HttpPost("{postId}/comments")]
+        public async Task<ActionResult<ServiceResponse<Comment>>> AddComment(int postId, AddCommentDto newCommentDto)
+        {
+            var post = await _postService.GetPost(postId);
+            if (post.Data == null)
+            {
+                return NotFound();
+            }
+            return Ok(await _commentService.AddComment(post.Data, newCommentDto));
+        }
+
+        [HttpPost("{postId}/{commentId}")]
+        public async Task<ActionResult<ServiceResponse<Comment>>> AddCommentReply(int postId, int commentId, AddCommentDto newCommentDto)
+        {
+            var post = await _postService.GetPost(postId);
+            if (post.Data == null)
+            {
+                return NotFound();
+            }
+            var comment = await _commentService.GetComment(commentId);
+            if (comment.Data == null)
+            {
+                return NotFound();
+            }
+            return Ok(await _commentService.AddCommentReply(comment.Data, newCommentDto));
+        }
+
+        [HttpGet("{postId}/{commentId}/replies")]
+        public async Task<ActionResult<ServiceResponse<List<Comment>>>> GetReplies(int postId, int commentId, int pageNumber, int pageSize)
+        {
+            var post = await _postService.GetPost(postId);
+            if (post.Data == null)
+            {
+                return NotFound();
+            }
+            var comment = await _commentService.GetComment(commentId);
+            if (comment.Data == null)
+            {
+                return NotFound();
+            }
+            return Ok(await _commentService.GetReplies(comment.Data, pageNumber, pageSize));
+        }
+
+        [HttpPut("{postId}/{commentId}")]
+        public async Task<ActionResult<ServiceResponse<Comment>>> UpdateComment(int postId, int commentId, UpdateCommentDto updatedComment)
+        {
+            var post = await _postService.GetPost(postId);
+            if (post.Data == null)
+            {
+                return NotFound();
+            }
+            var comment = await _commentService.GetComment(commentId);
+            if (comment.Data == null)
+            {
+                return NotFound();
+            }
+            return Ok(await _commentService.UpdateComment(comment.Data.Id, updatedComment));
+        }
+
     }
 }

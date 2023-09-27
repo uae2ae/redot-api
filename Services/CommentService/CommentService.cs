@@ -23,17 +23,17 @@ namespace redot_api.Services.CommentService
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<ServiceResponse<GetCommentDto>> AddComment(AddCommentDto newComment)
+        public Task<ServiceResponse<GetCommentDto>> AddComment(GetPostDto data, AddCommentDto newComment)
         {
-            var serviceResponse = new ServiceResponse<GetCommentDto>();
-            Comment comment = _mapper.Map<Comment>(newComment); 
-            comment.postId = GetPostId();
-            comment.Owner = await _context.Users.FirstOrDefaultAsync(u => u.Id == GetUserId());
+            Comment comment = _mapper.Map<Comment>(newComment);
+            ServiceResponse<GetCommentDto> serviceResponse = new ServiceResponse<GetCommentDto>();
+            comment.postId = data.Id;
+            comment.Owner = _context.Users.FirstOrDefault(u => u.Id == GetUserId());
             comment.Date = DateTime.Now;
-            await _context.Comments.AddAsync(comment);
-            await _context.SaveChangesAsync();
+            _context.Comments.Add(comment);
+            _context.SaveChanges();
             serviceResponse.Data = _mapper.Map<GetCommentDto>(comment);
-            return serviceResponse;
+            return Task.FromResult(serviceResponse);
         }
 
         public async Task<ServiceResponse<Comment>> AddCommentReply(Comment comment, AddCommentDto newComment)
@@ -167,9 +167,25 @@ namespace redot_api.Services.CommentService
             return serviceResponse;
         }
 
-        public async Task<ServiceResponse<GetCommentDto>> UpdateComment(int commentId)
+        public async Task<ServiceResponse<GetCommentDto>> UpdateComment(int commentId, UpdateCommentDto updatedComment)
         {
-            throw new NotImplementedException();
+            ServiceResponse<GetCommentDto> serviceResponse = new ServiceResponse<GetCommentDto>();
+            try
+            {
+                Comment comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == commentId);
+                comment.Content = updatedComment.Content;
+                comment.LastEdited = DateTime.Now;
+                await _context.SaveChangesAsync();
+                serviceResponse.Data = _mapper.Map<GetCommentDto>(comment);
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Success = false;
+                serviceResponse.Message = ex.Message;
+            }
+            return serviceResponse;
         }
+
+       
     }
 }

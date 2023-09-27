@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace redot_api.Dtos.Comment
 {
-    public class UpdateCommetnDto
+    public class UpdateCommentDto
     {
         public int PostID {get; set;}
         public int ParentID {get; set;}
