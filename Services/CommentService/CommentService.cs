@@ -12,11 +12,11 @@ namespace redot_api.Services.CommentService
     {
         private readonly DataContext _context;
         private readonly IMapper _mapper;
-        private readonly HttpContextAccessor _httpContextAccessor;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private int GetUserId() => int.Parse(_httpContextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         private int GetPostId() => int.Parse(_httpContextAccessor.HttpContext!.Request.RouteValues.SingleOrDefault(x => x.Key == "postId").Value?.ToString()!);
         
-        public CommentService(IMapper mapper, DataContext context, HttpContextAccessor httpContextAccessor)
+        public CommentService(IMapper mapper, DataContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _mapper = mapper;
@@ -27,11 +27,15 @@ namespace redot_api.Services.CommentService
         {
             Comment comment = _mapper.Map<Comment>(newComment);
             ServiceResponse<GetCommentDto> serviceResponse = new ServiceResponse<GetCommentDto>();
-            comment.postId = data.Id;
+            comment.postId = GetPostId();
             comment.Owner = _context.Users.FirstOrDefault(u => u.Id == GetUserId());
             comment.Date = DateTime.Now;
             _context.Comments.Add(comment);
             _context.SaveChanges();
+            //add the comments to the post
+            Post post = _context.Posts.FirstOrDefault(p => p.Id == comment.postId)!;
+            post.Comments!.Add(comment);
+            _context.Posts.Update(post);
             serviceResponse.Data = _mapper.Map<GetCommentDto>(comment);
             return Task.FromResult(serviceResponse);
         }
@@ -152,11 +156,11 @@ namespace redot_api.Services.CommentService
             ServiceResponse<GetCommentDto> serviceResponse = new ServiceResponse<GetCommentDto>();
             try
             {
-                Comment dbComment = await _context.Comments
+                Comment dbComment = (await _context.Comments
                     .Include(c => c.Owner)
-                    .Include(c => c.Replies)
+                    .Include(c => c.Replies)!
                     .ThenInclude(c => c.Owner)
-                    .FirstOrDefaultAsync(c => c.Id == commentId)!;
+                    .FirstOrDefaultAsync(c => c.Id == commentId))!;
                 serviceResponse.Data = _mapper.Map<GetCommentDto>(dbComment);
             }
             catch (Exception ex)
@@ -172,8 +176,8 @@ namespace redot_api.Services.CommentService
             ServiceResponse<GetCommentDto> serviceResponse = new ServiceResponse<GetCommentDto>();
             try
             {
-                Comment comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == commentId);
-                comment.Content = updatedComment.Content;
+                Comment comment = (await _context.Comments.FirstOrDefaultAsync(c => c.Id == commentId))!;
+                comment!.Content = updatedComment.Content;
                 comment.LastEdited = DateTime.Now;
                 await _context.SaveChangesAsync();
                 serviceResponse.Data = _mapper.Map<GetCommentDto>(comment);
@@ -186,6 +190,100 @@ namespace redot_api.Services.CommentService
             return serviceResponse;
         }
 
-       
+        public async Task<ServiceResponse<GetCommentDto>> RateComment(int commentId, bool upvote)
+        {
+            ServiceResponse<GetCommentDto> serviceResponse = new ServiceResponse<GetCommentDto>();
+            try
+            {
+                Comment comment = (await _context.Comments.FirstOrDefaultAsync(c => c.Id == commentId))!;
+                if (comment == null)
+                {
+                    serviceResponse.Success = false;
+                    serviceResponse.Message = "Comment not found.";
+                    return serviceResponse;
+                }
+                Vote? existingVote = await _context.Votes.FirstOrDefaultAsync(v => v.UserId == GetUserId() && v.PostVote == false && v.PostId == commentId);
+                if (existingVote != null)
+                {
+                    if (existingVote.Upvote == upvote)
+                    {
+                        serviceResponse.Success = false;
+                        serviceResponse.Message = "You have already voted on this comment.";
+                        return serviceResponse;
+                    }
+                    else
+                    {
+                        if (upvote)
+                        {
+                            comment.Rating += 2;
+                        }
+                        else
+                        {
+                            comment.Rating -= 2;
+                        }
+                        _context.Comments.Update(comment);
+                        _context.Votes.Remove(existingVote);
+                        await _context.SaveChangesAsync();
+                        serviceResponse.Data = _mapper.Map<GetCommentDto>(comment);
+                        return serviceResponse;
+                    }
+                }
+                Vote newVote = new Vote
+                {
+                    UserId = GetUserId(),
+                    PostVote = false,
+                    PostId = commentId,
+                    Upvote = upvote
+                };
+                if (upvote)
+                {
+                    comment.Rating++;
+                }
+                else
+                {
+                    comment.Rating--;
+                }
+                _context.Comments.Update(comment);
+                await _context.Votes.AddAsync(newVote);
+                await _context.SaveChangesAsync();
+                serviceResponse.Data = _mapper.Map<GetCommentDto>(comment);
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Success = false;
+                serviceResponse.Message = ex.Message;
+            }
+            return serviceResponse;
+        }
+
+        public Task<ServiceResponse<GetCommentDto>> DeleteComment(int commentId)
+        {
+            ServiceResponse<GetCommentDto> serviceResponse = new ServiceResponse<GetCommentDto>();
+            try
+            {
+                Comment comment = _context.Comments.FirstOrDefault(c => c.Id == commentId)!;
+                if (comment == null)
+                {
+                    serviceResponse.Success = false;
+                    serviceResponse.Message = "Comment not found.";
+                    return Task.FromResult(serviceResponse);
+                }
+                if (comment.Owner!.Id != GetUserId())
+                {
+                    serviceResponse.Success = false;
+                    serviceResponse.Message = "You can only delete your own comments.";
+                    return Task.FromResult(serviceResponse);
+                }
+                _context.Comments.Remove(comment);
+                _context.SaveChanges();
+                serviceResponse.Data = _mapper.Map<GetCommentDto>(comment);
+            }
+            catch (Exception ex)
+            {
+                serviceResponse.Success = false;
+                serviceResponse.Message = ex.Message;
+            }
+            return Task.FromResult(serviceResponse);
+        }
     }
 }

@@ -43,5 +43,22 @@ namespace redot_api.Controllers
             }
             return Ok(response);
         }
+        [HttpPost("GoogleLogin")]
+        public async Task<ActionResult<ServiceResponse<int>>> GoogleLogin(UserGoogleLoginDto request)
+        {
+            var response = await _authRepository.GoogleLogin(request.Token);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+        }
+    }
+
+    public class UserGoogleLoginDto
+    {
+        [Required]
+        public string Token { get; set; }
+        
     }
 }

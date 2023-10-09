@@ -13,5 +13,8 @@ namespace redot_api.Services.PostService
         Task<ServiceResponse<GetPostDto>> GetPost(int postId);
         Task<ServiceResponse<GetPostDto>> AddPost(AddPostDto newPost);
         Task<ServiceResponse<List<GetPostDto>>> SearchPosts(string searchTerm, int pageNumber, int pageSize, Order order);
+        Task<ServiceResponse<GetPostDto>> RatePost(int postId, bool upvote);
+        Task<ServiceResponse<GetPostDto>> UpdatePost(int postId, UpdatePostDto updatedPost);
+        Task<ServiceResponse<GetPostDto>> DeletePost(int postId);
     }
 }

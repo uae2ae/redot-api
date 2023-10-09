@@ -14,6 +14,8 @@ namespace redot_api.Services.CommentService
         Task<ServiceResponse<GetCommentDto>> AddComment(GetPostDto data, AddCommentDto newComment);
         Task<ServiceResponse<GetCommentDto>> AddCommentReply(GetCommentDto comment, AddCommentDto newComment);
         Task<ServiceResponse<GetCommentDto>> GetComment(int commentId);
+        Task<ServiceResponse<GetCommentDto>> RateComment(int commentId, bool upvote);
+        Task<ServiceResponse<GetCommentDto>> DeleteComment(int commentId);
         Task<ServiceResponse<GetCommentDto>> UpdateComment(int commentId, UpdateCommentDto updatedComment);
     }
 }

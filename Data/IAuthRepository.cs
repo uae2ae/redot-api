@@ -10,5 +10,6 @@ namespace redot_api.Data
         Task<ServiceResponse<int>> Register(User user, string password);
         Task<ServiceResponse<string>> Login(string username, string password);
         Task<int> UserExists(User user);
+        Task<ServiceResponse<string>> GoogleLogin(string token);
     }
 }

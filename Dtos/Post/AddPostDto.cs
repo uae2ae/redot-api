@@ -9,12 +9,9 @@ namespace redot_api.Dtos.Post
 {
     public class AddPostDto
     {
-        public redot_api.Models.User? Owner {get;set;}
+        public int SubredditId { get; internal set; } = 0;
         public string Title { get; set;} = string.Empty; 
         public Type Type {get; set;} = Type.Text;
         public string Content {get; set;} = string.Empty;
-        public int Rating {get; set;} = 0;
-        public DateTime Date {get; set;} = DateTime.Now;
-        public List<GetCommentDto>? Comments {get; set;}
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
+using Google.Apis.Auth;
 
 namespace redot_api.Data
 {
@@ -104,6 +105,24 @@ namespace redot_api.Data
             JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
             SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        public async Task<ServiceResponse<string>> GoogleLogin(string token)
+        {
+            var response = new ServiceResponse<string>();
+            var googleToken = await GoogleJsonWebSignature.ValidateAsync(token);
+            var user = await _Context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(googleToken.Email.ToLower()));
+            if(user == null){
+                user = new User{
+                    Username = googleToken.Name,
+                    Email = googleToken.Email,
+                    Role = "User"
+                };
+                _Context.Users.Add(user);
+                await _Context.SaveChangesAsync();
+            }
+            response.Data = CreateToken(user);
+            return response;
         }
     }
 }

@@ -7,12 +7,8 @@ namespace redot_api.Dtos.Comment
 {
     public class UpdateCommentDto
     {
-        public int PostID {get; set;}
-        public int ParentID {get; set;}
         public string Type {get; set;} = string.Empty;
         public string Content {set; get;} = string.Empty;
         public DateTime LastEdited {set; get;} = DateTime.Now;
-        public int Rating {set; get;} = 0;
-        public List<GetCommentDto>? Replies {set; get;}
     }
 }
