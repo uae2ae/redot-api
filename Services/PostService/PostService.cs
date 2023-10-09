@@ -43,7 +43,7 @@ namespace redot_api.Services.PostService
         public async Task<ServiceResponse<GetPostDto>> GetPost(int postId)
         {
             var serviceResponse = new ServiceResponse<GetPostDto>();
-            serviceResponse.Data =  _mapper.Map<GetPostDto>(posts.FirstOrDefault(p => p.Id == postId));
+            serviceResponse.Data =  _mapper.Map<GetPostDto>(await _context.Posts.FirstOrDefaultAsync(p => p.Id == postId));
             return serviceResponse;
         }
 
@@ -83,13 +83,19 @@ namespace redot_api.Services.PostService
             try
             {
                 var user = _context.Users.FirstOrDefault(u => u.Id == GetUserId());
+                if (user == null)
+                {
+                    serviceResponse.Success = false;
+                    serviceResponse.Message = "User not found.";
+                    return serviceResponse;
+                }
                 var vote = _context.Votes.FirstOrDefault(v => v.PostId == postId && v.UserId == user.Id);
                 if (vote == null)
                 {
                     vote = new Vote
                     {
                         PostId = postId,
-                        UserId = user.Id,
+                        UserId = user?.Id ?? 0,
                         Upvote = upvote
                     };
                     _context.Votes.Add(vote);

@@ -35,7 +35,7 @@ namespace redot_api.Controllers
         }
 
         
-        [HttpGet("posts/search")]
+        [HttpGet("/posts/search")]
         public async Task<ActionResult<ServiceResponse<List<GetPostDto>>>> SearchPosts(string searchTerm, int pageNumber, int pageSize, Order order){
             return Ok(await _postService.SearchPosts(searchTerm, pageNumber, pageSize, order));
         }

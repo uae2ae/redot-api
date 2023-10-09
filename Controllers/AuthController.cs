@@ -57,8 +57,7 @@ namespace redot_api.Controllers
 
     public class UserGoogleLoginDto
     {
-        [Required]
-        public string Token { get; set; }
+        public required string Token { get; set; }
         
     }
 }

@@ -11,7 +11,7 @@ using redot_api.Services.PostService;
 namespace redot_api.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("")]
     public class CommentController : ControllerBase
     {
         private readonly ICommentService _commentService;
@@ -85,7 +85,7 @@ namespace redot_api.Controllers
         }
 
         [Authorize]
-        [HttpPut("post/{postId}/{commentId")]
+        [HttpPut("post/{postId}/{commentId}")]
         public async Task<ActionResult<ServiceResponse<Comment>>> UpdateComment(int postId, int commentId, UpdateCommentDto updatedComment)
         {
             var post = await _postService.GetPost(postId);
