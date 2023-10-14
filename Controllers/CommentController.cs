@@ -11,7 +11,7 @@ using redot_api.Services.PostService;
 namespace redot_api.Controllers
 {
     [ApiController]
-    [Route("")]
+    [Route("{SubredotName}")]
     public class CommentController : ControllerBase
     {
         private readonly ICommentService _commentService;

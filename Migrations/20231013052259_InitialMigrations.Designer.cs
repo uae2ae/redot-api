@@ -12,8 +12,8 @@ using redot_api.Data;
 namespace redot_api.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20231006045138_Votes")]
-    partial class Votes
+    [Migration("20231013052259_InitialMigrations")]
+    partial class InitialMigrations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,46 @@ namespace redot_api.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Moderation", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubredotId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("UserId", "SubredotId");
+
+                    b.HasIndex("SubredotId");
+
+                    b.ToTable("Moderation");
+                });
+
+            modelBuilder.Entity("Subscription", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubredotId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("UserId", "SubredotId");
+
+                    b.HasIndex("SubredotId");
+
+                    b.ToTable("Subscription");
+                });
 
             modelBuilder.Entity("redot_api.Models.Comment", b =>
                 {
@@ -36,6 +76,9 @@ namespace redot_api.Migrations
                     b.Property<int?>("CommentId")
                         .HasColumnType("int");
 
+                    b.Property<int>("CommenterId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -46,10 +89,10 @@ namespace redot_api.Migrations
                     b.Property<DateTime>("LastEdited")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("OwnerId")
+                    b.Property<int?>("ParentCommentId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ParentCommentId")
+                    b.Property<int>("PostId")
                         .HasColumnType("int");
 
                     b.Property<int>("Rating")
@@ -58,16 +101,13 @@ namespace redot_api.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
-                    b.Property<int>("postId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CommentId");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("CommenterId");
 
-                    b.HasIndex("postId");
+                    b.HasIndex("PostId");
 
                     b.ToTable("Comments");
                 });
@@ -90,10 +130,13 @@ namespace redot_api.Migrations
                     b.Property<DateTime>("LastEdited")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("PosterID")
+                    b.Property<int>("PosterId")
                         .HasColumnType("int");
 
                     b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubredotId")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
@@ -103,14 +146,34 @@ namespace redot_api.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId")
+                    b.HasKey("Id");
+
+                    b.HasIndex("PosterId");
+
+                    b.HasIndex("SubredotId");
+
+                    b.ToTable("Posts");
+                });
+
+            modelBuilder.Entity("redot_api.Models.Subredot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Posts");
+                    b.ToTable("Subredots");
                 });
 
             modelBuilder.Entity("redot_api.Models.User", b =>
@@ -182,30 +245,74 @@ namespace redot_api.Migrations
                     b.ToTable("Votes");
                 });
 
+            modelBuilder.Entity("Moderation", b =>
+                {
+                    b.HasOne("redot_api.Models.Subredot", null)
+                        .WithMany()
+                        .HasForeignKey("SubredotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("redot_api.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Subscription", b =>
+                {
+                    b.HasOne("redot_api.Models.Subredot", null)
+                        .WithMany()
+                        .HasForeignKey("SubredotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("redot_api.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("redot_api.Models.Comment", b =>
                 {
                     b.HasOne("redot_api.Models.Comment", null)
                         .WithMany("Replies")
                         .HasForeignKey("CommentId");
 
-                    b.HasOne("redot_api.Models.User", "Owner")
+                    b.HasOne("redot_api.Models.User", "Commenter")
                         .WithMany("Comments")
-                        .HasForeignKey("OwnerId");
-
-                    b.HasOne("redot_api.Models.Post", null)
-                        .WithMany("Comments")
-                        .HasForeignKey("postId")
+                        .HasForeignKey("CommenterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Owner");
+                    b.HasOne("redot_api.Models.Post", "Post")
+                        .WithMany("Comments")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Commenter");
+
+                    b.Navigation("Post");
                 });
 
             modelBuilder.Entity("redot_api.Models.Post", b =>
                 {
-                    b.HasOne("redot_api.Models.User", null)
+                    b.HasOne("redot_api.Models.User", "Poster")
                         .WithMany("Posts")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("PosterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("redot_api.Models.Subredot", null)
+                        .WithMany("Posts")
+                        .HasForeignKey("SubredotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Poster");
                 });
 
             modelBuilder.Entity("redot_api.Models.Vote", b =>
@@ -225,6 +332,11 @@ namespace redot_api.Migrations
             modelBuilder.Entity("redot_api.Models.Post", b =>
                 {
                     b.Navigation("Comments");
+                });
+
+            modelBuilder.Entity("redot_api.Models.Subredot", b =>
+                {
+                    b.Navigation("Posts");
                 });
 
             modelBuilder.Entity("redot_api.Models.User", b =>

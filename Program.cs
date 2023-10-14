@@ -2,14 +2,15 @@ global using Microsoft.EntityFrameworkCore;
 global using redot_api.Models;
 global using redot_api.Data;
 global using AutoMapper;
-
 global using redot_api.Dtos.User;
+
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using redot_api.Services.PostService;
 using redot_api.Services.CommentService;
+using redot_api.Services.SubredotService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,10 +31,12 @@ builder.Services.AddSwaggerGen(c => {
     });
     c.OperationFilter<SecurityRequirementsOperationFilter>();
 });
+
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<ISubredotService, SubredotService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => {

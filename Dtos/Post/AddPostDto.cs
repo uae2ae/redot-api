@@ -9,7 +9,7 @@ namespace redot_api.Dtos.Post
 {
     public class AddPostDto
     {
-        public int SubredditId { get; internal set; } = 0;
+        public int SubredotId { get; internal set; } = 0;
         public string Title { get; set;} = string.Empty; 
         public Type Type {get; set;} = Type.Text;
         public string Content {get; set;} = string.Empty;

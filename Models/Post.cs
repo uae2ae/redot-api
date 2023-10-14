@@ -8,9 +8,9 @@ namespace redot_api.Models
     public class Post
     {
         public int Id {get; set;}
-        public int PosterID {get;set;}
-        
-        public int SubredditId { get; internal set; }
+        public User? Poster {get;set;}
+        public int PosterId {get;set;}
+        public int SubredotId { get; internal set; }
         public string Title { get; set;} = string.Empty; 
         public Type Type {get; set;} = Type.Text;
         public string Content {get; set;} = string.Empty;

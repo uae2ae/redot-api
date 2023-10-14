@@ -8,8 +8,10 @@ namespace redot_api.Models
     public class Comment
     {
         public int Id {get; set;}
-        public int postId {get; set;}
-        public User? Owner {get;set;}
+        public Post? Post {get; set;}
+        public int PostId {get; set;}
+        public User? Commenter {get;set;}
+        public int CommenterId {get;set;}
         public Type Type {get; set;} = Type.Text;
         public string Content {set; get;} = string.Empty;
         public DateTime Date {set; get;} = DateTime.Now;

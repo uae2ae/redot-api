@@ -13,6 +13,8 @@ namespace redot_api.Services.CommentService
         private readonly DataContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private User GetUser() => _context.Users.FirstOrDefault(u => u.Id == GetUserId())!;
+        private Post GetPost() => _context.Posts.FirstOrDefault(p => p.Id == GetPostId())!;
         private int GetUserId() => int.Parse(_httpContextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         private int GetPostId() => int.Parse(_httpContextAccessor.HttpContext!.Request.RouteValues.SingleOrDefault(x => x.Key == "postId").Value?.ToString()!);
         
@@ -27,13 +29,14 @@ namespace redot_api.Services.CommentService
         {
             Comment comment = _mapper.Map<Comment>(newComment);
             ServiceResponse<GetCommentDto> serviceResponse = new ServiceResponse<GetCommentDto>();
-            comment.postId = GetPostId();
-            comment.Owner = _context.Users.FirstOrDefault(u => u.Id == GetUserId());
+            comment.Post = GetPost();
+            comment.Commenter = _context.Users.FirstOrDefault(u => u.Id == GetUserId());
+            comment.CommenterId = comment.Commenter!.Id;
             comment.Date = DateTime.Now;
             _context.Comments.Add(comment);
             _context.SaveChanges();
-            //add the comments to the post
-            Post post = _context.Posts.FirstOrDefault(p => p.Id == comment.postId)!;
+            
+            Post post = _context.Posts.FirstOrDefault(p => p.Id == comment.Post.Id)!;
             post.Comments!.Add(comment);
             _context.Posts.Update(post);
             serviceResponse.Data = _mapper.Map<GetCommentDto>(comment);
@@ -46,8 +49,9 @@ namespace redot_api.Services.CommentService
             try
             {
                 Comment reply = _mapper.Map<Comment>(newComment);
-                reply.postId = comment.postId;
-                reply.Owner = await _context.Users.FirstOrDefaultAsync(u => u.Id == GetUserId());
+                reply.Post = comment.Post;
+                reply.Commenter = await _context.Users.FirstOrDefaultAsync(u => u.Id == GetUserId());
+                reply.CommenterId = reply.Commenter!.Id;
                 reply.Date = DateTime.Now;
                 reply.ParentCommentId = comment.Id;
                 await _context.Comments.AddAsync(reply);
@@ -90,7 +94,7 @@ namespace redot_api.Services.CommentService
             {
                 int skip = (pageNumber - 1) * pageSize;
                 List<Comment> dbComments = await _context.Comments
-                    .Where(c => c.postId == post.Id)
+                    .Where(c => c.Post!.Id == post.Id)
                     .OrderByDescending(c => c.Date)
                     .Skip(skip)
                     .Take(pageSize)
@@ -135,8 +139,10 @@ namespace redot_api.Services.CommentService
             try
             {
                 Comment reply = _mapper.Map<Comment>(newComment);
-                reply.postId = comment.PostID;
-                reply.Owner = await _context.Users.FirstOrDefaultAsync(u => u.Id == GetUserId());
+                Comment comment1 = (await _context.Comments.FirstOrDefaultAsync(c => c.Id == comment.Id))!;
+                reply.Post = comment1.Post;
+                reply.Commenter = await _context.Users.FirstOrDefaultAsync(u => u.Id == GetUserId());
+                reply.CommenterId = reply.Commenter!.Id;
                 reply.Date = DateTime.Now;
                 reply.ParentCommentId = comment.Id;
                 await _context.Comments.AddAsync(reply);
@@ -157,9 +163,9 @@ namespace redot_api.Services.CommentService
             try
             {
                 Comment dbComment = (await _context.Comments
-                    .Include(c => c.Owner)
+                    .Include(c => c.Commenter)
                     .Include(c => c.Replies)!
-                    .ThenInclude(c => c.Owner)
+                    .ThenInclude(c => c.CommenterId)
                     .FirstOrDefaultAsync(c => c.Id == commentId))!;
                 serviceResponse.Data = _mapper.Map<GetCommentDto>(dbComment);
             }
@@ -215,11 +221,11 @@ namespace redot_api.Services.CommentService
                     {
                         if (upvote)
                         {
-                            comment.Rating += 2;
+                            comment.Rating++;
                         }
                         else
                         {
-                            comment.Rating -= 2;
+                            comment.Rating--;
                         }
                         _context.Comments.Update(comment);
                         _context.Votes.Remove(existingVote);
@@ -268,7 +274,7 @@ namespace redot_api.Services.CommentService
                     serviceResponse.Message = "Comment not found.";
                     return Task.FromResult(serviceResponse);
                 }
-                if (comment.Owner!.Id != GetUserId())
+                if (comment.Commenter!.Id != GetUserId())
                 {
                     serviceResponse.Success = false;
                     serviceResponse.Message = "You can only delete your own comments.";

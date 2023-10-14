@@ -110,7 +110,15 @@ namespace redot_api.Data
         public async Task<ServiceResponse<string>> GoogleLogin(string token)
         {
             var response = new ServiceResponse<string>();
-            var googleToken = await GoogleJsonWebSignature.ValidateAsync(token);
+            var googleToken = new GoogleJsonWebSignature.Payload();
+            try{
+                googleToken = await GoogleJsonWebSignature.ValidateAsync(token);
+            }catch(Exception ex){
+                response.Success = false;
+                response.Message = ex.Message;
+                return response;
+            }
+
             var user = await _Context.Users.FirstOrDefaultAsync(x => x.Email.ToLower().Equals(googleToken.Email.ToLower()));
             if(user == null){
                 user = new User{
