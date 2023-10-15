@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using redot_api.Dtos.Comment;
 using redot_api.Dtos.Post;
+using redot_api.Dtos.Subredot;
 
 namespace redot_api
 {
@@ -19,6 +20,8 @@ namespace redot_api
             CreateMap<GetCommentDto, Comment>();
             CreateMap<UpdateCommentDto, Comment>();
             CreateMap<AddCommentDto, Comment>();
+            CreateMap<Subredot, GetSubredotDto>();
+            CreateMap<GetSubredotDto, Subredot>();
         }
     }
 }

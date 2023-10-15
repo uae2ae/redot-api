@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using redot_api.Dtos.Subredot;
@@ -26,10 +27,12 @@ namespace redot_api.Controllers
         public async Task<ActionResult<ServiceResponse<List<GetSubredotDto>>>> GetSubredots(){
             return Ok(await _subredotService.GetAllSubredots());
         }
+        [Authorize]
         [HttpPost("subredot")]
         public async Task<ActionResult<ServiceResponse<GetSubredotDto>>> AddSubredot(AddSubredotDto newSubredotDto){
             return Ok(await _subredotService.AddSubredot(newSubredotDto));
         }
+        [Authorize]
         [HttpPut("{SubredotName?}")]
         public async Task<ActionResult<ServiceResponse<GetSubredotDto>>> UpdateSubredot(UpdateSubredotDto updatedSubredot){
             var response = await _subredotService.UpdateSubredot(updatedSubredot);
@@ -38,6 +41,7 @@ namespace redot_api.Controllers
             }
             return Ok(response);
         }
+        [Authorize]
         [HttpDelete("{SubredotName?}")]
         public async Task<ActionResult<ServiceResponse<List<GetSubredotDto>>>> DeleteSubredot(int id){
             var response = await _subredotService.DeleteSubredot(id);
